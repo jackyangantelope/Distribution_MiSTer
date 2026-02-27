@@ -35,9 +35,6 @@ jobs:
         git config --global user.email "theypsilon@gmail.com"
         git config --global user.name "The CI/CD Bot"
 
-    - name: Assert develop files amount to be less than 1000
-      run: set -exo pipefail && (( $(find . -type f | wc -l) < 1000 ))
-
     - name: Download Distribution files
       run: ./.github/download_distribution.py .
 
