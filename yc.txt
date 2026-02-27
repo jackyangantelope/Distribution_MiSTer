@@ -1,4 +1,4 @@
-;
+; RR
 ; PHASE_INC override per <core_fps> mode.
 ; This eliminates dot crawl on CVBS and also Y/C (S-Video)
 ;
@@ -402,5 +402,6 @@ WONDERSWAN_59.4s=132237830098
 WONDERSWAN_60.0s=132237830098
 PSX_59.8s=90790223688
 PSX_59.9is=90790223688
+
 
 
