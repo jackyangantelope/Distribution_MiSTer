@@ -1,0 +1,72 @@
+name: Update Distribution
+
+on:
+  schedule:
+  - cron:  "*/20 * * * *"
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BASE_FILES_URL: https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/%s/
+      DB_JSON_NAME: db.json
+      DB_ID: distribution_mister
+      DB_URL: https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/db.json.zip
+      ZIPS_CONFIG: ./.github/zips_config.json
+      LINUX_GITHUB_REPOSITORY: MiSTer-devel/SD-Installer-Win64_MiSTer
+      BROKEN_MRAS_IGNORE: true
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: develop
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Set Git User
+      run: |
+        git config --global user.email "theypsilon@gmail.com"
+        git config --global user.name "The CI/CD Bot"
+
+    - name: Assert develop files amount to be less than 1000
+      run: set -exo pipefail && (( $(find . -type f | wc -l) < 1000 ))
+
+    - name: Download Distribution files
+      run: ./.github/download_distribution.py .
+
+    - name: Assertions on Distribution files
+      run: |
+        set -exo pipefail
+        (( $(find . -type f | wc -l) > 15000 )) && echo "More than 15000 total files"
+        (( $(find . -type f -ipath "*.mra" | wc -l) > 1000 )) && echo "More than 1000 total MRAs"
+        (( $(find . -type f ! -ipath "./_Arcade/_alternatives/*" -ipath "*.mra" | wc -l) > 450 )) && echo "More than 450 MRAs excluding alternatives"
+        (( $(find . -type f -ipath "*.rbf" | wc -l) > 200 )) && echo "More than 200 total cores"
+        (( $(find . -type f ! -ipath "./_Arcade/cores/*" -ipath "*.rbf" | wc -l) > 100 )) && echo "Mora than 100 cores excluding arcades"
+        (( $(find . -type f -ipath "./Cheats/*" | wc -l) > 10000 )) && echo "More than 10000 cheats"
+        (( $(find . -type f ! -ipath "./Cheats/*" ! -ipath "*.rbf" ! -ipath "*.mra" | wc -l) > 2000 )) && echo "More than 2000 non-(cores, mras, cheats)"
+      shell: bash
+
+    - name: Commit Distribution files
+      run: ./.github/commit_distribution.sh
+
+    - name: Build Database
+      run: ./.github/db_operator.py build .
+
+    - name: New Database Exists?
+      id: db_exists
+      run: if [ -f "${DB_JSON_NAME}" ] ; then echo "new_db=true" >> "${GITHUB_OUTPUT}" ; fi
+
+    - name: Test Database
+      if: steps.db_exists.outputs.new_db == 'true' 
+      run: ./.github/test_database.sh
+
+    - name: Push Database
+      if: steps.db_exists.outputs.new_db == 'true' 
+      run: ./.github/push_database.sh
