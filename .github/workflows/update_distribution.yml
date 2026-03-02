@@ -20,6 +20,7 @@ jobs:
       ZIPS_CONFIG: ./.github/zips_config.json
       LINUX_GITHUB_REPOSITORY: MiSTer-devel/SD-Installer-Win64_MiSTer
       BROKEN_MRAS_IGNORE: true
+      EXTERNAL_FILES: ./.github/external_files.csv
 
     steps:
     - uses: actions/checkout@v3
